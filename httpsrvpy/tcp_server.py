@@ -1,8 +1,10 @@
 import socket
-import handler
+import httpsrvpy.handler as handler
+
 
 class MyTCPServer:
-    def __init__(self, handler: handler.MyHandler, addr="127.0.0.1", port=8080):
+    def __init__(self, handler: handler.MyHandler, addr: str = "127.0.0.1",
+                 port: int = 8080):
         self.listen_addr = addr
         self.port = port
         self.handler = handler
@@ -22,9 +24,9 @@ class MyTCPServer:
                         resp = self.handle_data(conn, addr, data)
                         print(resp)
                         self.send_response(conn, resp)
-    
+
     def handle_data(self, conn, addr, data):
-        return self.handler.handle(data)  
+        return self.handler.handle(data)
 
     def send_response(self, conn, data):
         conn.sendall(data.encode("utf-8"))
