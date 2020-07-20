@@ -1,5 +1,3 @@
-import enum
-
 class HTTPStatus:
     OK = "HTTP/1.0 200 OK\r\n"
     NOT_FOUND = "HTTP/1.0 404 not found\r\n"

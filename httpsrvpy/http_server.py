@@ -8,29 +8,27 @@ class MyHttpServer(MyHandler):
     SERVER_NAME = "MyHttpServer"
 
     def __init__(self):
-        self.method = ""
-        self.http_version = ""
-        self.path = ""
+        pass
 
-    def handle(self, raw):
+    def handle(self, raw) -> str:
         payload = raw.decode("utf-8")
         first_line = payload.split('\r\n')[0].split()
         if not first_line[2].startswith("HTTP"):
             return self.prepare_response(
                 HTTPStatus.BAD_REQUEST, HTTPContentType.TEXT_HTML)
 
-        self.http_version = first_line[2][len("HTTP/"):]
+        #http_version = first_line[2][len("HTTP/"):]
         if first_line[0] != "GET":
             return self.prepare_response(HTTPStatus.METHOD_NOT_ALLOWED,
                                          HTTPContentType.TEXT_HTML,
                                          "This server only serves HTTP GET")
 
-        self.method = first_line[0]
-        self.path = first_line[1]
-        return self.handle_GET()
+        #method = first_line[0]
+        path = first_line[1]
+        return self.handle_GET(path)
 
-    def handle_GET(self):
-        file_path = self.path.lstrip("/")
+    def handle_GET(self, path: str) -> str:
+        file_path = path.lstrip("/")
         if not os.path.exists(file_path):
             return self.prepare_response(HTTPStatus.NOT_FOUND,
                                          HTTPContentType.TEXT_HTML,
