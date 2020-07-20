@@ -1,5 +1,5 @@
 import unittest
-from httpsrvpy import HTTPContentType, HTTPStatus, http_server
+from httpsrvpy import HTTPStatus, http_server
 
 class TestHttpServer(unittest.TestCase):
     get_req_index = """GET /index.html HTTP/1.1
@@ -14,7 +14,7 @@ class TestHttpServer(unittest.TestCase):
                     Sec-Fetch-Dest: document
                     Accept-Encoding: gzip, deflate, br
                     Accept-Language: en-US,en;q=0.9"""
-    
+
     get_req_no_file = """GET /whatisthisnotexist HTTP/1.1
                     Host: 127.0.0.1:9999
                     Connection: keep-alive

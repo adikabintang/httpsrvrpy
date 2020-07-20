@@ -1,4 +1,4 @@
-from time import gmtime, strftime, ctime
+from time import gmtime, strftime
 import os.path
 from httpsrvpy.handler import MyHandler
 from httpsrvpy import HTTPStatus, HTTPContentType
