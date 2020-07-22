@@ -8,4 +8,10 @@ class HTTPStatus:
 class HTTPContentType:
     TEXT_HTML = "text/html"
     JSON = "application/json"
+
+class HTTPMethod:
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
     
