@@ -12,6 +12,11 @@ class HTTPContentType:
 class HTTPMethod:
     GET = "GET"
     POST = "POST"
+    HEAD = "HEAD"
     PUT = "PUT"
     DELETE = "DELETE"
-    
+    CONNECT = "CONNECT"
+    OPTIONS = "OPTIONS"
+    TRACE = "TRACE"
+    PATCH = "PATCH"
+    ALL_METHODS = {GET, POST, HEAD, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH}
