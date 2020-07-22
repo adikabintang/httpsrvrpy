@@ -1,13 +1,12 @@
 import socket
 import httpsrvpy.handler as handler
 
-
 class MyTCPServer:
-    def __init__(self, handler: handler.MyHandler, addr: str = "127.0.0.1",
+    def __init__(self, conn_handler: handler.MyHandler, addr: str = "127.0.0.1",
                  port: int = 8080):
         self.listen_addr = addr
         self.port = port
-        self.handler = handler
+        self.handler = conn_handler
 
     def start(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -21,11 +20,11 @@ class MyTCPServer:
                         data = conn.recv(1500)
                         if not data:
                             break
-                        resp = self.handle_data(conn, addr, data)
+                        resp = self.handle_data(data)
                         print(resp)
                         self.send_response(conn, resp)
 
-    def handle_data(self, conn, addr, data):
+    def handle_data(self, data):
         return self.handler.handle(data)
 
     def send_response(self, conn, data):
