@@ -9,7 +9,7 @@ docker_build:
 	docker build -t httpsrvpy .
 
 docker_run:
-	docker run -d -p 8080:80 --name=httpsrvpy httpsrvpy
+	docker run -d -p 8080:8080 --name=httpsrvpy httpsrvpy
 
 docker_stop:
 	docker stop httpsrvpy && docker rm httpsrvpy
