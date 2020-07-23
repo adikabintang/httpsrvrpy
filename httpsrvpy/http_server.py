@@ -1,9 +1,7 @@
 from time import gmtime, strftime
-import os.path
 from httpsrvpy.handler import MyHandler
 from httpsrvpy import HTTPStatus, HTTPContentType, HTTPMethod
-import re
-
+import os.path
 
 class MyHttpServer(MyHandler):
     SERVER_NAME = "MyHttpServer"
@@ -26,7 +24,7 @@ class MyHttpServer(MyHandler):
             raise MyHttpServerError()
 
         payload = raw.decode("utf-8")
-        header = re.split('\r\n\r\n', payload)[0]
+        header = payload.split('\r\n\r\n')[0]
         if not header:
             raise MyHttpServerError()
 
@@ -38,20 +36,21 @@ class MyHttpServer(MyHandler):
 
         first_line_splitted = first_line.split()
         if len(first_line_splitted) != 3 or \
-                not first_line_splitted[2].startswith("HTTP") and \
-                not first_line_splitted[1].startswith("/") and \
+                not first_line_splitted[2].startswith("HTTP") or \
+                not first_line_splitted[1].startswith("/") or \
                 first_line_splitted[0] not in HTTPMethod.ALL_METHODS:
             raise MyHttpServerError()
 
         http_header_attr["method"] = first_line_splitted[0]
         http_header_attr["path"] = first_line_splitted[1]
         http_header_attr["http_version"] = first_line_splitted[2]
-        for line in all_lines[1:]:
-            splitted = line.split(": ")
-            if len(splitted) != 2:
-                raise MyHttpServerError()
+        if len(all_lines) > 1:
+            for line in all_lines[1:]:
+                splitted = line.split(": ")
+                if len(splitted) != 2:
+                    raise MyHttpServerError()
 
-            http_header_attr[splitted[0]] = splitted[1]
+                http_header_attr[splitted[0]] = splitted[1]
 
         return http_header_attr
 
@@ -70,9 +69,14 @@ class MyHttpServer(MyHandler):
                 return self.prepare_response(HTTPStatus.OK,
                                              HTTPContentType.TEXT_HTML,
                                              content_file, last_modified)
-            except Exception as err:
+            except OSError as err:
                 return self.prepare_response(HTTPStatus.INTERNAL_SERVER_ERROR,
-                                             HTTPContentType.TEXT_HTML, err)
+                                             HTTPContentType.TEXT_HTML,
+                                             f"OS error: {err}")
+            except BaseException as err:
+                return self.prepare_response(HTTPStatus.INTERNAL_SERVER_ERROR,
+                                             HTTPContentType.TEXT_HTML,
+                                             f"error when reading files: {err}")
 
     def prepare_response(self, status, content_type: str,
                          payload: str = "", last_modified: str = "",
@@ -85,12 +89,13 @@ class MyHttpServer(MyHandler):
 
         if last_modified:
             http_header += "Last-Modified: " + last_modified + "\r\n"
-        
+
         if additional_headers:
             for key, value in additional_headers.items():
                 http_header += f"{key}: {value}\r\n"
 
         return http_header + "\r\n" + payload
+
 
 class MyHttpServerError(Exception):
     def __init__(self, message="invalid http header"):
