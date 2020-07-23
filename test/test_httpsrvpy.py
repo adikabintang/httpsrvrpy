@@ -3,7 +3,7 @@ from httpsrvpy import HTTPStatus, http_server
 
 
 class TestHttpServer(unittest.TestCase):
-    get_req_index = """GET /index.html HTTP/1.1\r\n\
+    get_req_index = b"""GET /index.html HTTP/1.1\r\n\
 Host: 127.0.0.1:9999\r\n\
 Connection: keep-alive\r\n\
 Upgrade-Insecure-Requests: 1\r\n\
@@ -17,7 +17,7 @@ Accept-Encoding: gzip, deflate, br\r\n\
 Accept-Language: en-US,en;q=0.9\r\n\
 \r\n"""
 
-    get_req_no_file = """GET /thisneverexists HTTP/1.1\r\n\
+    get_req_no_file = b"""GET /thisneverexists HTTP/1.1\r\n\
 Host: 127.0.0.1:9999\r\n\
 Connection: keep-alive\r\n\
 Upgrade-Insecure-Requests: 1\r\n\
@@ -31,7 +31,7 @@ Accept-Encoding: gzip, deflate, br\r\n\
 Accept-Language: en-US,en;q=0.9\r\n\
 \r\n"""
 
-    get_req_index_invalid = """GET /index.html HTP/1.1\r\n\
+    get_req_index_invalid = b"""GET /index.html HTP/1.1\r\n\
 Host: 127.0.0.1:9999\r\n\
 Connection: keep-alive\r\n\
 Upgrade-Insecure-Requests: 1\r\n\
@@ -51,28 +51,28 @@ Accept-Language: en-US,en;q=0.9\r\n\
 
     def test_handle(self):
 
-        response = self.tested_server.handle(self.get_req_index.encode("utf-8"))
+        response = self.tested_server.handle(self.get_req_index).decode("iso-8859-1")
         status = response.split('\r\n')[0] + "\r\n"
         self.assertEqual(status, HTTPStatus.OK)
 
-        response = self.tested_server.handle(self.get_req_no_file.encode("utf-8"))
+        response = self.tested_server.handle(self.get_req_no_file).decode("iso-8859-1")
         status = response.split('\r\n')[0] + "\r\n"
         self.assertEqual(status, HTTPStatus.NOT_FOUND)
 
-        response = self.tested_server.handle("".encode("utf-8"))
+        response = self.tested_server.handle(b"").decode("iso-8859-1")
         status = response.split('\r\n')[0] + "\r\n"
         self.assertEqual(status, HTTPStatus.BAD_REQUEST)
 
-        response = self.tested_server.handle("non http".encode("utf-8"))
+        response = self.tested_server.handle(b"non http").decode("iso-8859-1")
         status = response.split('\r\n')[0] + "\r\n"
         self.assertEqual(status, HTTPStatus.BAD_REQUEST)
 
-        response = self.tested_server.handle(self.get_req_index_invalid.encode("utf-8"))
+        response = self.tested_server.handle(self.get_req_index_invalid).decode("iso-8859-1")
         status = response.split('\r\n')[0] + "\r\n"
         self.assertEqual(status, HTTPStatus.BAD_REQUEST)
     
     def test_parse_header(self):
-        headers = self.tested_server.parse_header(self.get_req_index.encode("utf-8"))
+        headers = self.tested_server.parse_header(self.get_req_index)
         expected_headers = {
             "method": "GET",
             "path": "/index.html",

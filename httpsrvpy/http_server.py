@@ -1,7 +1,10 @@
 from time import gmtime, strftime
 from httpsrvpy.handler import MyHandler
-from httpsrvpy import HTTPStatus, HTTPContentType, HTTPMethod
+from httpsrvpy import HTTPStatus, HTTPMethod
+import logging
+import mimetypes
 import os.path
+
 
 class MyHttpServer(MyHandler):
     SERVER_NAME = "MyHttpServer"
@@ -13,17 +16,17 @@ class MyHttpServer(MyHandler):
                 return self.handle_GET(headers["path"])
 
             return self.prepare_response(HTTPStatus.METHOD_NOT_ALLOWED,
-                                         HTTPContentType.TEXT_HTML,
                                          "This server only serves HTTP GET")
         except MyHttpServerError as err:
-            return self.prepare_response(
-                HTTPStatus.BAD_REQUEST, HTTPContentType.TEXT_HTML, err.message)
+            return self.prepare_response(HTTPStatus.BAD_REQUEST, err.message)
 
-    def parse_header(self, raw: str) -> dict:
+    def parse_header(self, raw) -> dict:
         if not raw:
             raise MyHttpServerError()
 
-        payload = raw.decode("utf-8")
+        # https://tools.ietf.org/html/rfc7230#section-3.2.4
+        # HTTP is encoded with ISO-8859-1
+        payload = raw.decode("iso-8859-1")
         header = payload.split('\r\n\r\n')[0]
         if not header:
             raise MyHttpServerError()
@@ -57,44 +60,48 @@ class MyHttpServer(MyHandler):
     def handle_GET(self, path: str) -> str:
         file_path = path.lstrip("/")
         if not os.path.exists(file_path):
-            return self.prepare_response(HTTPStatus.NOT_FOUND,
-                                         HTTPContentType.TEXT_HTML,
-                                         "file not found")
+            return self.prepare_response(HTTPStatus.NOT_FOUND, "file not found")
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, "rb") as f:
             try:
+                more_headers = dict()
                 content_file = f.read()
-                last_modified = strftime("%a, %d %b %Y %H:%M:%S +0000",
-                                         gmtime(os.path.getmtime(file_path)))
+                more_headers["Last-Modified"] = strftime(
+                    "%a, %d %b %Y %H:%M:%S +0000",
+                    gmtime(os.path.getmtime(file_path)))
+
+                type_and_encoding = mimetypes.guess_type(file_path)
+                more_headers["Content-type"] = type_and_encoding[0]
+                if type_and_encoding[1]:
+                    more_headers["Content-Encoding"] = type_and_encoding[1]
+
                 return self.prepare_response(HTTPStatus.OK,
-                                             HTTPContentType.TEXT_HTML,
-                                             content_file, last_modified)
+                                             content_file, more_headers)
             except OSError as err:
+                logging.error("OS error: %s" % err)
                 return self.prepare_response(HTTPStatus.INTERNAL_SERVER_ERROR,
-                                             HTTPContentType.TEXT_HTML,
                                              f"OS error: {err}")
             except BaseException as err:
+                logging.error("error reading files: %s" % err)
                 return self.prepare_response(HTTPStatus.INTERNAL_SERVER_ERROR,
-                                             HTTPContentType.TEXT_HTML,
-                                             f"error when reading files: {err}")
+                                             f"error reading files: {err}")
 
-    def prepare_response(self, status, content_type: str,
-                         payload: str = "", last_modified: str = "",
-                         additional_headers: dict = None) -> str:
-
+    def prepare_response(self, status, payload, more_headers: dict = None):
         http_header = status + f"Server: {self.SERVER_NAME}\r\n" + \
             f"Date: {strftime('%a, %d %b %Y %H:%M:%S +0000', gmtime())}\r\n" + \
-            f"Content-type: {content_type}\r\n" + \
             f"Content-Length: {len(payload)}\r\n"
 
-        if last_modified:
-            http_header += "Last-Modified: " + last_modified + "\r\n"
-
-        if additional_headers:
-            for key, value in additional_headers.items():
+        if more_headers:
+            for key, value in more_headers.items():
                 http_header += f"{key}: {value}\r\n"
 
-        return http_header + "\r\n" + payload
+        if isinstance(payload, str):
+            http_header += "Content-type: text/html\r\n"
+            payload = payload.encode("iso-8859-1")
+
+        http_header += "\r\n"
+
+        return http_header.encode("iso-8859-1") + payload
 
 
 class MyHttpServerError(Exception):
