@@ -5,10 +5,6 @@ class HTTPStatus:
     METHOD_NOT_ALLOWED = "HTTP/1.1 405 Method Not Allowed\r\n"
     INTERNAL_SERVER_ERROR = "HTTP/1.1 500 Internal Server Error\r\n"
 
-class HTTPContentType:
-    TEXT_HTML = "text/html"
-    JSON = "application/json"
-
 class HTTPMethod:
     GET = "GET"
     POST = "POST"
