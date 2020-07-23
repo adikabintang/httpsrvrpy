@@ -1,7 +1,6 @@
 import unittest
 from httpsrvpy import HTTPStatus, http_server
 
-
 class TestHttpServer(unittest.TestCase):
     get_req_index = b"""GET /index.html HTTP/1.1\r\n\
 Host: 127.0.0.1:9999\r\n\
@@ -91,6 +90,9 @@ Accept-Language: en-US,en;q=0.9\r\n\
         }
         
         self.assertDictEqual(expected_headers, headers)
+
+        self.assertRaises(http_server.MyHttpServerError,
+            self.tested_server.parse_header, b"GET /index.html HTP\r\n")
 
 if __name__ == "__main__":
     unittest.main()
