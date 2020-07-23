@@ -4,6 +4,7 @@ from httpsrvpy.handler import MyHandler
 from httpsrvpy import HTTPStatus, HTTPContentType, HTTPMethod
 import re
 
+
 class MyHttpServer(MyHandler):
     SERVER_NAME = "MyHttpServer"
 
@@ -14,16 +15,16 @@ class MyHttpServer(MyHandler):
                 return self.handle_GET(headers["path"])
 
             return self.prepare_response(HTTPStatus.METHOD_NOT_ALLOWED,
-                                        HTTPContentType.TEXT_HTML,
-                                        "This server only serves HTTP GET")
+                                         HTTPContentType.TEXT_HTML,
+                                         "This server only serves HTTP GET")
         except MyHttpServerError as err:
             return self.prepare_response(
                 HTTPStatus.BAD_REQUEST, HTTPContentType.TEXT_HTML, err.message)
-    
+
     def parse_header(self, raw: str) -> dict:
         if not raw:
             raise MyHttpServerError()
-        
+
         payload = raw.decode("utf-8")
         header = re.split('\r\n\r\n', payload)[0]
         if not header:
@@ -37,9 +38,9 @@ class MyHttpServer(MyHandler):
 
         first_line_splitted = first_line.split()
         if len(first_line_splitted) != 3 or \
-            not first_line_splitted[2].startswith("HTTP") and \
-            not first_line_splitted[1].startswith("/") and \
-            first_line_splitted[0] not in HTTPMethod.ALL_METHODS:
+                not first_line_splitted[2].startswith("HTTP") and \
+                not first_line_splitted[1].startswith("/") and \
+                first_line_splitted[0] not in HTTPMethod.ALL_METHODS:
             raise MyHttpServerError()
 
         http_header_attr["method"] = first_line_splitted[0]
@@ -51,7 +52,7 @@ class MyHttpServer(MyHandler):
                 raise MyHttpServerError()
 
             http_header_attr[splitted[0]] = splitted[1]
-        
+
         return http_header_attr
 
     def handle_GET(self, path: str) -> str:
@@ -74,18 +75,20 @@ class MyHttpServer(MyHandler):
                                              HTTPContentType.TEXT_HTML, err)
 
     def prepare_response(self, status, content_type: str,
-                         payload: str = "", last_modified: str = "") -> str:
+                         payload: str = "", last_modified: str = "",
+                         additional_headers: dict = None) -> str:
 
-        http_header = status + ("Server: {}\r\n"
-                                "Date: {}\r\n"
-                                "Content-type: {}\r\n"
-                                "Content-Length: {}\r\n").format(
-            self.SERVER_NAME,
-            strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()),
-            content_type, len(payload))
+        http_header = status + f"Server: {self.SERVER_NAME}\r\n" + \
+            f"Date: {strftime('%a, %d %b %Y %H:%M:%S +0000', gmtime())}\r\n" + \
+            f"Content-type: {content_type}\r\n" + \
+            f"Content-Length: {len(payload)}\r\n"
 
         if last_modified:
             http_header += "Last-Modified: " + last_modified + "\r\n"
+        
+        if additional_headers:
+            for key, value in additional_headers.items():
+                http_header += f"{key}: {value}\r\n"
 
         return http_header + "\r\n" + payload
 
