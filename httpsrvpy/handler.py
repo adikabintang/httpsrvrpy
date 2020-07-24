@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 class MyHandler(ABC):
     """
-    class MyHandler is the generic class for handling incoming request to the
+    class MyHandler is a generic class for handling incoming request to the
     TCP server.
 
     The custom TCP request handler class must inherit from this class. For 
@@ -12,12 +12,12 @@ class MyHandler(ABC):
     Methods
     -------
     handle(raw)
-        Define what to do upon receiving a request from a client.
+        Defines what to do upon receiving a request from a client.
     """
     @abstractmethod
     def handle(self, raw):
         """
-        Define what to do upon receiving a request from a client.
+        Defines what to do upon receiving a request from a client.
 
         Parameters
         ----------

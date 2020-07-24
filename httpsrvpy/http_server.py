@@ -1,15 +1,38 @@
-from time import gmtime, strftime
-from httpsrvpy.handler import MyHandler
-from httpsrvpy import HTTPStatus, HTTPMethod
+"""
+This module contains HTTP server implementation (class MyHttpServer) and
+custom exception for the HTTP server (class MyHttpServerError)
+"""
+import datetime
 import logging
 import mimetypes
 import os.path
+from time import gmtime, strftime
+from httpsrvpy import HTTPMethod, HTTPStatus
+from httpsrvpy.handler import MyHandler
 
 
 class MyHttpServer(MyHandler):
+    """
+    class MyHttpServer is a class that is inherited from MyHandler to provide
+    an HTTP server capability on top of class MyTCPServer.
+
+    This class overrides the handle(raw) function. Currently, it only supports
+    HTTP GET request. A custom HTTP handler class can also be created by deriving
+    from this class. For example, a class MyCustomHTTPServer(MyHttpServer) can
+    override handle_get(path) to handle request and to do other things such as
+    reading from database or something else and return a json string.
+    """
     SERVER_NAME = "MyHttpServer"
 
     def handle(self, raw) -> str:
+        """
+        Defines what to do upon receiving a request from a client.
+
+        Parameters
+        ----------
+        raw : bytearray
+            The data sent by the client.
+        """
         try:
             headers = self.parse_header(raw)
             if headers["method"] == HTTPMethod.GET:
@@ -20,7 +43,21 @@ class MyHttpServer(MyHandler):
         except MyHttpServerError as err:
             return self.prepare_response(HTTPStatus.BAD_REQUEST, err.message)
 
-    def parse_header(self, raw) -> dict:
+    @staticmethod
+    def parse_header(raw) -> dict:
+        """
+        Parses HTTP headers and return the header as a dictionary.
+
+        Parameters
+        ----------
+        raw : bytearray
+            The data sent by the client.
+
+        Returns
+        -------
+        dict
+            Dictionary of HTTP headers
+        """
         if not raw:
             raise MyHttpServerError()
 
@@ -57,12 +94,26 @@ class MyHttpServer(MyHandler):
 
         return http_header_attr
 
-    def handle_GET(self, path: str) -> str:
+    def handle_GET(self, path: str):
+        """
+        Handles HTTP GET request from a client.
+
+        Parameters
+        ----------
+        path : str
+            The URL of the requested resource
+
+        Returns
+        -------
+        bytearray
+            The HTTP response (header + payload)
+        """
         file_path = path.lstrip("/")
         if not os.path.exists(file_path):
             return self.prepare_response(HTTPStatus.NOT_FOUND, "file not found")
 
         with open(file_path, "rb") as f:
+            current_time = datetime.datetime.now()
             try:
                 more_headers = dict()
                 content_file = f.read()
@@ -75,18 +126,38 @@ class MyHttpServer(MyHandler):
                 if type_and_encoding[1]:
                     more_headers["Content-Encoding"] = type_and_encoding[1]
 
+                logging.info("%s,,%s", current_time, HTTPStatus.OK)
                 return self.prepare_response(HTTPStatus.OK,
                                              content_file, more_headers)
             except OSError as err:
-                logging.error("OS error: %s" % err)
+                logging.error("%s,OS error: %s,%s", current_time, err,
+                              HTTPStatus.INTERNAL_SERVER_ERROR)
                 return self.prepare_response(HTTPStatus.INTERNAL_SERVER_ERROR,
                                              f"OS error: {err}")
             except BaseException as err:
-                logging.error("error reading files: %s" % err)
+                logging.error("%s,error reading files: %s,%s", current_time, err,
+                              HTTPStatus.INTERNAL_SERVER_ERROR)
                 return self.prepare_response(HTTPStatus.INTERNAL_SERVER_ERROR,
                                              f"error reading files: {err}")
 
     def prepare_response(self, status, payload, more_headers: dict = None):
+        """
+        Prepares HTTP response: headers + payload.
+
+        Parameters
+        ----------
+        status : str
+            The HTTP status, see HTTPStatus
+        payload : bytearray or string
+            The HTTP body
+        more_headers : dict
+            More user-defined HTTP headers
+
+        Returns
+        -------
+        bytearray
+            The HTTP response (header + payload), iso-8859-1 encoded
+        """
         http_header = status + f"Server: {self.SERVER_NAME}\r\n" + \
             f"Date: {strftime('%a, %d %b %Y %H:%M:%S +0000', gmtime())}\r\n" + \
             f"Content-Length: {len(payload)}\r\n"
@@ -105,5 +176,8 @@ class MyHttpServer(MyHandler):
 
 
 class MyHttpServerError(Exception):
+    """
+    Custom exception raised when incoming HTTP header is invalid.
+    """
     def __init__(self, message="invalid http header"):
         self.message = message
