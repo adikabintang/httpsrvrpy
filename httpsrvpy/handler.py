@@ -24,4 +24,3 @@ class MyHandler(ABC):
         raw : bytearray
             The data sent by the client.
         """
-        pass

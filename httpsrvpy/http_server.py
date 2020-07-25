@@ -24,6 +24,9 @@ class MyHttpServer(MyHandler):
     """
     SERVER_NAME = "MyHttpServer"
 
+    def __init__(self):
+        logging.basicConfig(level=logging.INFO)
+
     def handle(self, raw) -> str:
         """
         Defines what to do upon receiving a request from a client.
@@ -34,7 +37,9 @@ class MyHttpServer(MyHandler):
             The data sent by the client.
         """
         try:
+            logging.debug(raw)
             headers = self.parse_header(raw)
+            logging.debug(headers)
             if headers["method"] == HTTPMethod.GET:
                 return self.handle_GET(headers["path"])
 
@@ -160,7 +165,8 @@ class MyHttpServer(MyHandler):
         """
         http_header = status + f"Server: {self.SERVER_NAME}\r\n" + \
             f"Date: {strftime('%a, %d %b %Y %H:%M:%S +0000', gmtime())}\r\n" + \
-            f"Content-Length: {len(payload)}\r\n"
+            f"Content-Length: {len(payload)}\r\n" + \
+            "Connection: close\r\n"
 
         if more_headers:
             for key, value in more_headers.items():
